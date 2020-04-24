@@ -1,0 +1,12 @@
+---
+# handlers file for kuber
+
+- name: restart docker
+  service:
+    name: docker
+    state: restarted
+
+- name: restart kubelet
+  service:
+    name: kubelet
+    state: restarted

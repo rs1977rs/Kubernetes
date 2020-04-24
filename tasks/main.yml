@@ -1,0 +1,74 @@
+---
+# tasks file for kuber
+
+# Отключаем swap - с ним кубер работать не хочет
+- name: Turn off swap-file
+  shell: swapoff -a
+
+# и убираем его из fstab
+- name: Remove Swap from fstab
+  mount:
+    name: swap
+    fstype: swap
+    state: absent
+
+# Копируем модуль ядра в папкку автозагружаемых модулей
+- name: Copy br_netfilter module it /etc/modules-load.d/
+  copy:
+    src: k8s.conf
+    dest: /etc/modules-load.d/
+
+# и стартуем его без перезагрузки
+- name: Add the br_netfilter module
+  modprobe:
+    name: br_netfilter
+    state: present
+
+# Добавляем нужные параметры в sysctl.conf
+- name: Ensure net.bridge.bridge-nf-call-ip6tables is set to 1
+  sysctl:
+    name: net.bridge.bridge-nf-call-ip6tables
+    value: '1'
+    state: present
+
+- name: Ensure net.bridge.bridge-nf-call-iptables is set to 1
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: '1'
+    state: present
+
+# Добавляем репу кубера
+- name: Add Kubernetes repositories
+  yum_repository:
+    name: Kubernetes
+    description: Kubernetes repo
+    baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+    enabled: yes
+    gpgcheck: yes
+    repo_gpgcheck: yes
+    gpgkey:
+      - https://packages.cloud.google.com/yum/doc/yum-key.gpg
+      - https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+
+# Устанавлием компоненты
+- name: Install utilites
+  yum:
+    name:
+      - docker
+      - kubeadm
+      - kubelet
+    state: latest
+  notify:
+    - restart docker
+    - restart kubelet
+
+# и стартуем их
+- name: Enable docker
+  service:
+    name: docker
+    enabled: yes
+
+- name: Enable kubelet
+  service:
+    name: kubelet
+    enabled: yes
