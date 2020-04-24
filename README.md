@@ -67,3 +67,6 @@ Example Playbook
 ```
 ssh -L 8001:127.0.0.1:8001 user@ip_or_hostname_master
 ```
+После чего в браузере:
+
+http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
